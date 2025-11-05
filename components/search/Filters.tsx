@@ -1,3 +1,5 @@
+import Avatar from "../../components/ui/Avatar.tsx";
+import { formatPrice } from "../../sdk/format.ts";
 import type {
   Filter,
   FilterToggle,
@@ -5,9 +7,6 @@ import type {
   ProductListingPage,
 } from "apps/commerce/types.ts";
 import { parseRange } from "apps/commerce/utils/filters.ts";
-import Avatar from "../../components/ui/Avatar.tsx";
-import { clx } from "../../sdk/clx.ts";
-import { formatPrice } from "../../sdk/format.ts";
 
 interface Props {
   filters: ProductListingPage["filters"];
@@ -23,21 +22,22 @@ function ValueItem(
     <a href={url} rel="nofollow" class="flex items-center gap-2">
       <div aria-checked={selected} class="checkbox" />
       <span class="text-sm">{label}</span>
-      {quantity > 0 && <span class="text-sm text-base-400">({quantity})</span>}
+      {quantity > 0 && <span class="text-sm text-base-300">({quantity})</span>}
     </a>
   );
 }
 
 function FilterValues({ key, values }: FilterToggle) {
-  const avatars = key === "tamanho" || key === "cor";
-  const flexDirection = avatars ? "flex-row items-center" : "flex-col";
+  const flexDirection = key === "tamanho" || key === "cor"
+    ? "flex-row"
+    : "flex-col";
 
   return (
-    <ul class={clx(`flex flex-wrap gap-2`, flexDirection)}>
+    <ul class={`flex flex-wrap gap-2 ${flexDirection}`}>
       {values.map((item) => {
-        const { url, selected, value } = item;
+        const { url, selected, value, quantity } = item;
 
-        if (avatars) {
+        if (key === "cor" || key === "tamanho") {
           return (
             <a href={url} rel="nofollow">
               <Avatar
@@ -67,7 +67,7 @@ function FilterValues({ key, values }: FilterToggle) {
 
 function Filters({ filters }: Props) {
   return (
-    <ul class="flex flex-col gap-6 p-4 sm:p-0">
+    <ul class="flex flex-col gap-6 p-4">
       {filters
         .filter(isToggle)
         .map((filter) => (

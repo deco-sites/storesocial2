@@ -44,8 +44,16 @@ const installmentToString = (
   }
 
   const withTaxes = sellingPrice < price;
-
-  return `${billingDuration}x de R$ ${billingIncrement} ${
+  const singleInstallment = (billingIncrement / billingDuration)
+  // Código comentado para utilização futura. Mantive o return abaixo para simular o que o figma sugere, porém exibirá parcelamento em 1x. 
+  // if(billingDuration > 1){
+  //   return `ou  R$ ${billingIncrement} em até ${billingDuration}x de ${singleInstallment} ${
+  //     withTaxes ? "com juros" : "sem juros"
+  //   }`;
+  // }else{
+  //   return null
+  // }
+  return `ou  R$ ${billingIncrement} em até ${billingDuration}x de ${singleInstallment} ${
     withTaxes ? "com juros" : "sem juros"
   }`;
 };

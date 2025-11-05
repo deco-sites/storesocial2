@@ -28,7 +28,7 @@ export default function Intro(
             {text}
           </h1>
           {subheading && (
-            <p class="text-base-content text-[18px]">{subheading}</p>
+            <p class="text-base-content text-bigger">{subheading}</p>
           )}
         </div>
       </div>

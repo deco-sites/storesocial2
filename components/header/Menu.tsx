@@ -2,82 +2,70 @@ import Icon from "../../components/ui/Icon.tsx";
 import type { SiteNavigationElement } from "apps/commerce/types.ts";
 
 export interface Props {
-  navItems?: SiteNavigationElement[];
+  items: SiteNavigationElement[];
+  type?: string;
 }
 
-function MenuItem({ item }: { item: SiteNavigationElement }) {
+function Menu({ items }: Props) {
   return (
-    <div class="collapse collapse-plus">
-      <input type="checkbox" />
-      <div class="collapse-title">{item.name}</div>
-      <div class="collapse-content">
-        <ul>
-          <li>
-            <a class="underline text-sm" href={item.url}>Ver todos</a>
-          </li>
-          {item.children?.map((node) => (
-            <li>
-              <MenuItem item={node} />
-            </li>
-          ))}
-        </ul>
+    <div class="flex flex-col h-full px-5 full-phone:pt-[115px]">
+      <div class="text-[20px] font-bold leading-6 text-black uppercase">
+        Área do cliente
       </div>
-    </div>
-  );
-}
+      
+      <div class="flex pt-[10px] pb-5 gap-2">
+        <div class="bg-white-1 p-[10px] rounded-[5px]">
+          <a class="flex flex-col" href="/my-account">
+            <Icon
+              class="mb-[10px]"
+              id="UserNotCoMobile"
+              size={30}
+              strokeWidth={2}
+            />
+            <span class="text-base font-normal leading-[14px] text-left uppercase  w-[75%]">
+              Minha conta
+            </span>
+          </a>
+        </div>
+        <div class="bg-white-1 p-[10px] rounded-[5px]">
+          <a class="flex flex-col" href="/my-account">
+            <Icon
+              class="mb-[10px]"
+              id="CartNotCoMobile"
+              size={30}
+              strokeWidth={2}
+            />
+            <span class="text-base font-normal leading-[14px] text-left uppercase  w-[75%]">
+              Meus pedidos
+            </span>
+          </a>
+        </div>
+      </div>
 
-function Menu({ navItems = [] }: Props) {
-  return (
-    <div
-      class="flex flex-col h-full overflow-y-auto"
-      style={{ minWidth: "100vw" }}
-    >
-      <ul class="px-4 flex-grow flex flex-col divide-y divide-base-200 overflow-y-auto">
-        {navItems.map((item) => (
+      <ul class="flex-grow flex flex-col">
+        {items.map((item) => (
           <li>
             <MenuItem item={item} />
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
 
-      <ul class="flex flex-col py-2 bg-base-200">
-        <li>
-          <a
-            class="flex items-center gap-4 px-4 py-2"
-            href="/wishlist"
-          >
-            <Icon id="favorite" />
-            <span class="text-sm">Lista de desejos</span>
-          </a>
-        </li>
-        <li>
-          <a
-            class="flex items-center gap-4 px-4 py-2"
-            href="https://www.deco.cx"
-          >
-            <Icon id="home_pin" />
-            <span class="text-sm">Nossas lojas</span>
-          </a>
-        </li>
-        <li>
-          <a
-            class="flex items-center gap-4 px-4 py-2"
-            href="https://www.deco.cx"
-          >
-            <Icon id="call" />
-            <span class="text-sm">Fale conosco</span>
-          </a>
-        </li>
-        <li>
-          <a
-            class="flex items-center gap-4 px-4 py-2"
-            href="https://www.deco.cx"
-          >
-            <Icon id="account_circle" />
-            <span class="text-sm">Minha conta</span>
-          </a>
-        </li>
-      </ul>
+function MenuItem({ item }: { item: SiteNavigationElement }) {
+  return (
+    <div class="pt-3 pb-3 border-b border-solid border-gray-10">
+      <div class={`flex text-[22px] font-bold leading-[24px] text-black `}>
+        <a href={item.url} >
+          <span class={`font-bold font-afacad text-larger leading-[22px]  full-phone:text-black`}>
+            {item.additionalType}
+          </span>
+          <span  style={{ color: item.identifier }} >
+            {item.name}
+          </span>
+        </a>
+      </div>
     </div>
   );
 }

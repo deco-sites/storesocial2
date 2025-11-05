@@ -1,35 +1,29 @@
 import type { SiteNavigationElement } from "apps/commerce/types.ts";
 import Image from "apps/website/components/Image.tsx";
-import {
-  HEADER_HEIGHT_DESKTOP,
-  NAVBAR_HEIGHT_DESKTOP,
-} from "../../constants.ts";
+import { headerHeight } from "./constants.ts";
 
-function NavItem({ item }: { item: SiteNavigationElement }) {
+function NavItem({ item, index }: { item: SiteNavigationElement, index: number}) {
   const { url, name, children } = item;
   const image = item?.image?.[0];
-
   return (
-    <li
-      class="group flex items-center pr-5"
-      style={{ height: NAVBAR_HEIGHT_DESKTOP }}
-    >
-      <a
-        href={url}
-        class="group-hover:underline text-sm font-medium"
-      >
-        {name}
+    <li class="group flex items-center item-submenu-notco">
+      <a href={url} class={`Header-category-${index + 1}-cy`}>
+        <span class={`font-bold font-afacad text-bigger leading-[22px] text-white full-phone:text-black`}>
+          {item.additionalType}
+        </span>
+        <span
+          class={"font-bold font-afacad text-bigger leading-[22px] text-white full-phone:text-black"}
+          style={{ color: item.identifier }}
+        >
+          {name}
+        </span>
       </a>
 
       {children && children.length > 0 &&
         (
           <div
-            class="fixed hidden hover:flex group-hover:flex bg-base-100 z-40 items-start justify-center gap-6 border-t-2 border-b-2 border-base-200 w-screen"
-            style={{
-              top: "0px",
-              left: "0px",
-              marginTop: HEADER_HEIGHT_DESKTOP,
-            }}
+            class="fixed hidden hover:flex group-hover:flex bg-base-100 z-50 items-start justify-center gap-6 border-t border-b-2 border-base-200 w-screen"
+            style={{ top: "0px", left: "0px", marginTop: headerHeight }}
           >
             {image?.url && (
               <Image
@@ -41,9 +35,9 @@ function NavItem({ item }: { item: SiteNavigationElement }) {
                 loading="lazy"
               />
             )}
-            <ul class="flex items-start justify-start gap-6 container">
+            <ul class="flex items-start justify-center gap-6">
               {children.map((node) => (
-                <li class="p-6 pl-0">
+                <li class="p-6">
                   <a class="hover:underline" href={node.url}>
                     <span>{node.name}</span>
                   </a>

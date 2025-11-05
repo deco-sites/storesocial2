@@ -1,37 +1,59 @@
-import { ComponentChildren } from "preact";
 import { useId } from "../../sdk/useId.ts";
-import { useScript } from "@deco/deco/hooks";
+import { useSignal } from "@preact/signals";
+import { ComponentChildren } from "preact";
+import { useEffect, useState } from "preact/hooks";
+
 interface Props {
+  onClose?: () => void;
   open?: boolean;
+  class?: string;
+  style?: string;
   children?: ComponentChildren;
-  id?: string;
+  loading?: "eager" | "lazy";
+  customClass?: string;
 }
-const script = (id: string) => {
-  const handler = (e: KeyboardEvent) => {
-    if (e.key !== "Escape" && e.keyCode !== 27) {
-      return;
-    }
-    const input = document.getElementById(id) as HTMLInputElement | null;
-    if (!input) {
-      return;
-    }
-    input.checked = false;
-  };
-  addEventListener("keydown", handler);
-};
-function Modal({ children, open, id = useId() }: Props) {
+
+function Modal(props: Props) {
+  const {
+    children,
+    open,
+    onClose,
+    customClass,
+    loading = "lazy",
+  } = props;
+  const lazy = useSignal(loading === "lazy" && !open);
+  const id = useId();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) =>
+      (e.key === "Escape" || e.keyCode === 27) && open && onClose?.();
+
+    addEventListener("keydown", handler);
+
+    return () => {
+      removeEventListener("keydown", handler);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    lazy.value = false;
+  }, []);
+
   return (
     <>
-      <input id={id} checked={open} type="checkbox" class="modal-toggle" />
-      <div class="modal">
-        {children}
+      <input
+        id={id}
+        checked={open}
+        type="checkbox"
+        class="modal-toggle"
+        onChange={(e) => e.currentTarget.checked === false && onClose?.()}
+      />
+      <div class={`modal ${customClass}`}>
+        {!lazy.value && children}
         <label class="modal-backdrop" for={id}>Close</label>
       </div>
-      <script
-        type="module"
-        dangerouslySetInnerHTML={{ __html: useScript(script, id) }}
-      />
     </>
   );
 }
+
 export default Modal;

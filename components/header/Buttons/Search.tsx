@@ -1,0 +1,30 @@
+import Button from "../../../components/ui/Button.tsx";
+import Icon from "../../../components/ui/Icon.tsx";
+import { useUI } from "../../../sdk/useUI.ts";
+
+export default function SearchButton() {
+  const { displaySearchDrawer, displaySearchPopup } = useUI();
+
+  return (
+    <>
+      <Button
+        class="btn-circle btn-sm btn-ghost hidden sm:flex Header-search-button-cy"
+        aria-label="search icon button"
+        onClick={() => {
+          displaySearchPopup.value = !displaySearchPopup.value;
+        }}
+      >
+        <Icon id="MagnifyingGlassNotCo" size={20} strokeWidth={0.1} />
+      </Button>
+      <Button
+        class="btn-circle btn-sm btn-ghost sm:hidden"
+        aria-label="search icon button"
+        onClick={() => {
+          displaySearchPopup.value = !displaySearchPopup.value;
+        }}
+      >
+        <Icon id="MagnifyingGlassNotCo" size={24} strokeWidth={0.1} />
+      </Button>
+    </>
+  );
+}

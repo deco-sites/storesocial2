@@ -1,14 +1,12 @@
 import { defineConfig } from "$fresh/server.ts";
-import { plugins } from "deco/plugins/deco.ts";
+import plugins from "https://denopkg.com/deco-sites/std@1.24.2/plugins/mod.ts";
 import manifest from "./manifest.gen.ts";
-import { mcpServer } from "@deco/mcp";
+import tailwind from "./tailwind.config.ts";
 
 export default defineConfig({
   plugins: plugins({
     manifest,
-    htmx: true,
-    useServer: (deco, hono) => {
-      hono.use("/*", mcpServer(deco));
-    },
+    // deno-lint-ignore no-explicit-any
+    tailwind: tailwind as any,
   }),
 });

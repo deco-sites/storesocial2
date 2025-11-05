@@ -1,312 +1,196 @@
-import type { ProductListingPage } from "apps/commerce/types.ts";
-import { mapProductToAnalyticsItem } from "apps/commerce/utils/productToAnalyticsItem.ts";
-import ProductCard from "../../components/product/ProductCard.tsx";
+import { SendEventOnView } from "../../components/Analytics.tsx";
+import { Layout as CardLayout } from "../../components/product/ProductCard.tsx";
 import Filters from "../../components/search/Filters.tsx";
 import Icon from "../../components/ui/Icon.tsx";
-import { clx } from "../../sdk/clx.ts";
+import SearchControls from "../../islands/SearchControls.tsx";
 import { useId } from "../../sdk/useId.ts";
 import { useOffer } from "../../sdk/useOffer.ts";
-import { useSendEvent } from "../../sdk/useSendEvent.ts";
-import Breadcrumb from "../ui/Breadcrumb.tsx";
-import Drawer from "../ui/Drawer.tsx";
-import Sort from "./Sort.tsx";
-import { useDevice, useScript, useSection } from "@deco/deco/hooks";
-import { type SectionProps } from "@deco/deco";
+import type { ProductListingPage } from "apps/commerce/types.ts";
+import { mapProductToAnalyticsItem } from "apps/commerce/utils/productToAnalyticsItem.ts";
+import ProductGallery, { Columns } from "../product/ProductGallery.tsx";
+import SearchbarNF from "./SearchbarNF.tsx";
+import Page404 from "./404.tsx";
+import Image from "apps/website/components/Image.tsx";
+
+
+export type Format = "Show More" | "Pagination";
+
 export interface Layout {
   /**
-   * @title Pagination
+   * @description Use drawer for mobile like behavior on desktop. Aside for rendering the filters alongside the products
+   */
+  variant?: "aside" | "drawer";
+  /**
+   * @description Number of products per line on grid
+   */
+  columns?: Columns;
+  /**
    * @description Format of the pagination
    */
-  pagination?: "show-more" | "pagination";
+  format?: Format;
 }
+
 export interface Props {
   /** @title Integration */
   page: ProductListingPage | null;
   layout?: Layout;
+  cardLayout?: CardLayout;
+
   /** @description 0 for ?page=0 as your first page */
   startingPage?: 0 | 1;
-  /** @hidden */
-  partial?: "hideMore" | "hideLess";
 }
+
 function NotFound() {
   return (
-    <div class="w-full flex justify-center items-center py-10">
-      <span>Not Found!</span>
+    <div class="w-full flex flex-col justify-center items-center pt-[68px] pb-[68px] mx-auto max-w-9/10 lg:max-w-full full-phone:px-5 full-phone:pt-[150px]">
+      <div>
+        <div>
+          <Icon id="LogoNotco" size={78} strokeWidth={2} />
+        </div>
+      </div>
+      <span className="text-black text-large max-w-[284px] uppercase leading-[26px] text-center mb-[14px] mt-5 font-bold">
+        Ops! não encontramos essa página.
+      </span>
+      <div className="flex flex-col items-center mb-16">
+        <span className="text-black text-bigger font-normal mb-5 text-center max-w-[310px]">
+          Faça uma nova busca e continue explorando o delicioso universo de NotCo!
+        </span>
+        <div className="pageSearchbar w-full sm:max-w-9/10">
+          <SearchbarNF buttonClose={false} />
+        </div>
+      </div>
+      <a
+        href="/"
+        className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] mb-8 bg-black text-white text-big font-normal" >
+        <Icon id="RefreshNotCo" size={18} strokeWidth={2} />
+        Voltar para o início
+      </a>
     </div>
   );
 }
-const useUrlRebased = (overrides: string | undefined, base: string) => {
-  let url: string | undefined = undefined;
-  if (overrides) {
-    const temp = new URL(overrides, base);
-    const final = new URL(base);
-    final.pathname = temp.pathname;
-    for (const [key, value] of temp.searchParams.entries()) {
-      final.searchParams.set(key, value);
-    }
-    url = final.href;
-  }
-  return url;
-};
-function PageResult(props: SectionProps<typeof loader>) {
-  const { layout, startingPage = 0, url, partial } = props;
-  const page = props.page!;
-  const { products, pageInfo } = page;
+
+function Result({
+  page,
+  layout,
+  cardLayout,
+  startingPage = 0,
+  url: _url,
+}: Omit<Props, "page"> & {
+  page: ProductListingPage;
+  url: string;
+}) {
+  const { products, filters, breadcrumb, pageInfo, sortOptions } = page;
   const perPage = pageInfo?.recordPerPage || products.length;
+  const url = new URL(_url);
+
+  const { format = "Show More" } = layout ?? {};
+
+  const id = useId();
+
   const zeroIndexedOffsetPage = pageInfo.currentPage - startingPage;
   const offset = zeroIndexedOffsetPage * perPage;
-  const nextPageUrl = useUrlRebased(pageInfo.nextPage, url);
-  const prevPageUrl = useUrlRebased(pageInfo.previousPage, url);
-  const partialPrev = useSection({
-    href: prevPageUrl,
-    props: { partial: "hideMore" },
-  });
-  const partialNext = useSection({
-    href: nextPageUrl,
-    props: { partial: "hideLess" },
-  });
-  const infinite = layout?.pagination !== "pagination";
+
+  const isPartial = url.searchParams.get("partial") === "true";
+  const isFirstPage = !pageInfo.previousPage;
+
   return (
-    <div class="grid grid-flow-row grid-cols-1 place-items-center">
-      <div
-        class={clx(
-          "pb-2 sm:pb-10",
-          (!prevPageUrl || partial === "hideLess") && "hidden",
-        )}
-      >
-        <a
-          rel="prev"
-          class="btn btn-ghost"
-          hx-swap="outerHTML show:parent:top"
-          hx-get={partialPrev}
-        >
-          <span class="inline [.htmx-request_&]:hidden">
-            Show Less
-          </span>
-          <span class="loading loading-spinner hidden [.htmx-request_&]:block" />
-        </a>
-      </div>
-
-      <div
-        data-product-list
-        class={clx(
-          "grid items-center",
-          "grid-cols-2 gap-2",
-          "sm:grid-cols-4 sm:gap-10",
-          "w-full",
-        )}
-      >
-        {products?.map((product, index) => (
-          <ProductCard
-            key={`product-card-${product.productID}`}
-            product={product}
-            preload={index === 0}
-            index={offset + index}
-            class="h-full min-w-[160px] max-w-[300px]"
+    <>
+      <div class="container px-4 py-10 md-tablet:pt-0 ">
+        {(isFirstPage || !isPartial) && (
+          <SearchControls
+            sortOptions={sortOptions}
+            filters={filters}
+            pageInfo={pageInfo}
+            displayFilter={layout?.variant === "drawer"}
           />
-        ))}
-      </div>
+        )}
 
-      <div class={clx("pt-2 sm:pt-10 w-full", "")}>
-        {infinite
-          ? (
-            <div class="flex justify-center [&_section]:contents">
+        <div class="flex flex-row">
+          {layout?.variant === "aside" && filters.length > 0 &&
+            (isFirstPage || !isPartial) && (
+              <aside class="hidden ">
+                <Filters filters={filters} />
+              </aside>
+            )}
+          <div class="flex-grow" id={id}>
+            <ProductGallery
+              products={products}
+              offset={offset}
+              layout={{ card: cardLayout, columns: layout?.columns, format }}
+              pageInfo={pageInfo}
+              url={url}
+            />
+          </div>
+        </div>
+
+        {format == "Pagination" && (
+          <div class="flex justify-center my-4">
+            <div class="join">
               <a
-                rel="next"
-                class={clx(
-                  "btn btn-ghost",
-                  (!nextPageUrl || partial === "hideMore") && "hidden",
-                )}
-                hx-swap="outerHTML show:parent:top"
-                hx-get={partialNext}
-              >
-                <span class="inline [.htmx-request_&]:hidden">
-                  Show More
-                </span>
-                <span class="loading loading-spinner hidden [.htmx-request_&]:block" />
-              </a>
-            </div>
-          )
-          : (
-            <div class={clx("join", infinite && "hidden")}>
-              <a
-                rel="prev"
                 aria-label="previous page link"
-                href={prevPageUrl ?? "#"}
-                disabled={!prevPageUrl}
+                rel="prev"
+                href={pageInfo.previousPage ?? "#"}
                 class="btn btn-ghost join-item"
               >
-                <Icon id="chevron-right" class="rotate-180" />
+                <Icon id="ChevronLeft" size={24} strokeWidth={2} />
               </a>
               <span class="btn btn-ghost join-item">
                 Page {zeroIndexedOffsetPage + 1}
               </span>
               <a
-                rel="next"
                 aria-label="next page link"
-                href={nextPageUrl ?? "#"}
-                disabled={!nextPageUrl}
+                rel="next"
+                href={pageInfo.nextPage ?? "#"}
                 class="btn btn-ghost join-item"
               >
-                <Icon id="chevron-right" />
+                <Icon id="ChevronRight" size={24} strokeWidth={2} />
               </a>
             </div>
-          )}
+          </div>
+        )}
       </div>
-    </div>
-  );
-}
-const setPageQuerystring = (page: string, id: string) => {
-  const element = document.getElementById(id)?.querySelector(
-    "[data-product-list]",
-  );
-  if (!element) {
-    return;
-  }
-  new IntersectionObserver((entries) => {
-    const url = new URL(location.href);
-    const prevPage = url.searchParams.get("page");
-    for (let it = 0; it < entries.length; it++) {
-      if (entries[it].isIntersecting) {
-        url.searchParams.set("page", page);
-      } else if (
-        typeof history.state?.prevPage === "string" &&
-        history.state?.prevPage !== page
-      ) {
-        url.searchParams.set("page", history.state.prevPage);
-      }
-    }
-    history.replaceState({ prevPage }, "", url.href);
-  }).observe(element);
-};
-function Result(props: SectionProps<typeof loader>) {
-  const container = useId();
-  const controls = useId();
-  const device = useDevice();
-  const { startingPage = 0, url, partial } = props;
-  const page = props.page!;
-  const { products, filters, breadcrumb, pageInfo, sortOptions } = page;
-  const perPage = pageInfo?.recordPerPage || products.length;
-  const zeroIndexedOffsetPage = pageInfo.currentPage - startingPage;
-  const offset = zeroIndexedOffsetPage * perPage;
-  const viewItemListEvent = useSendEvent({
-    on: "view",
-    event: {
-      name: "view_item_list",
-      params: {
-        // TODO: get category name from search or cms setting
-        item_list_name: breadcrumb.itemListElement?.at(-1)?.name,
-        item_list_id: breadcrumb.itemListElement?.at(-1)?.item,
-        items: page.products?.map((product, index) =>
-          mapProductToAnalyticsItem({
-            ...(useOffer(product.offers)),
-            index: offset + index,
-            product,
-            breadcrumbList: page.breadcrumb,
-          })
-        ),
-      },
-    },
-  });
-  const results = (
-    <span class="text-sm font-normal">
-      {page.pageInfo.recordPerPage} of {page.pageInfo.records} results
-    </span>
-  );
-  const sortBy = sortOptions.length > 0 && (
-    <Sort sortOptions={sortOptions} url={url} />
-  );
-  return (
-    <>
-      <div id={container} {...viewItemListEvent} class="w-full">
-        {partial
-          ? <PageResult {...props} />
-          : (
-            <div class="container flex flex-col gap-4 sm:gap-5 w-full py-4 sm:py-5 px-5 sm:px-0">
-              <Breadcrumb itemListElement={breadcrumb?.itemListElement} />
-
-              {device === "mobile" && (
-                <Drawer
-                  id={controls}
-                  aside={
-                    <div class="bg-base-100 flex flex-col h-full divide-y overflow-y-hidden">
-                      <div class="flex justify-between items-center">
-                        <h1 class="px-4 py-3">
-                          <span class="font-medium text-2xl">Filters</span>
-                        </h1>
-                        <label class="btn btn-ghost" for={controls}>
-                          <Icon id="close" />
-                        </label>
-                      </div>
-                      <div class="flex-grow overflow-auto">
-                        <Filters filters={filters} />
-                      </div>
-                    </div>
-                  }
-                >
-                  <div class="flex sm:hidden justify-between items-end">
-                    <div class="flex flex-col">
-                      {results}
-                      {sortBy}
-                    </div>
-
-                    <label class="btn btn-ghost" for={controls}>
-                      Filters
-                    </label>
-                  </div>
-                </Drawer>
-              )}
-
-              <div class="grid grid-cols-1 sm:grid-cols-[250px_1fr]">
-                {device === "desktop" && (
-                  <aside class="place-self-start flex flex-col gap-9">
-                    <span class="text-base font-semibold h-12 flex items-center">
-                      Filters
-                    </span>
-
-                    <Filters filters={filters} />
-                  </aside>
-                )}
-
-                <div class="flex flex-col gap-9">
-                  {device === "desktop" && (
-                    <div class="flex justify-between items-center">
-                      {results}
-                      <div>
-                        {sortBy}
-                      </div>
-                    </div>
-                  )}
-                  <PageResult {...props} />
-                </div>
-              </div>
-            </div>
-          )}
-      </div>
-
-      <script
-        type="module"
-        dangerouslySetInnerHTML={{
-          __html: useScript(
-            setPageQuerystring,
-            `${pageInfo.currentPage}`,
-            container,
-          ),
+      <SendEventOnView
+        id={id}
+        event={{
+          name: "view_item_list",
+          params: {
+            // TODO: get category name from search or cms setting
+            item_list_name: breadcrumb.itemListElement?.at(-1)?.name,
+            item_list_id: breadcrumb.itemListElement?.at(-1)?.item,
+            items: page.products?.map((product, index) =>
+              mapProductToAnalyticsItem({
+                ...(useOffer(product.offers)),
+                index: offset + index,
+                product,
+                breadcrumbList: page.breadcrumb,
+              })
+            ),
+          },
         }}
       />
     </>
   );
 }
-function SearchResult({ page, ...props }: SectionProps<typeof loader>) {
+
+function SearchResult(
+  { page, ...props }: ReturnType<typeof loader>,
+) {
   if (!page) {
+    return <Page404 />;
+  }
+
+  if (page.pageInfo.records === 0) {
     return <NotFound />;
   }
+
   return <Result {...props} page={page} />;
 }
+
 export const loader = (props: Props, req: Request) => {
   return {
     ...props,
     url: req.url,
   };
 };
+
 export default SearchResult;

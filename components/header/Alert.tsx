@@ -1,4 +1,5 @@
 import Slider from "../../components/ui/Slider.tsx";
+import SliderJS from "../../islands/SliderJS.tsx";
 import { useId } from "../../sdk/useId.ts";
 
 export interface Props {
@@ -15,18 +16,17 @@ function Alert({ alerts = [], interval = 5 }: Props) {
 
   return (
     <div id={id}>
-      <Slider class="carousel carousel-center w-screen gap-6 bg-secondary text-secondary-content text-sm/4">
+      <Slider class="carousel carousel-center w-screen bg-secondary gap-6">
         {alerts.map((alert, index) => (
           <Slider.Item index={index} class="carousel-item">
-            <span
-              class="px-5 py-4 w-screen text-center"
-              dangerouslySetInnerHTML={{ __html: alert }}
-            />
+            <span class="text-sm text-secondary-content flex justify-center items-center w-screen h-[38px]">
+              {alert}
+            </span>
           </Slider.Item>
         ))}
       </Slider>
 
-      <Slider.JS rootId={id} interval={interval && interval * 1e3} />
+      <SliderJS rootId={id} interval={interval && interval * 1e3} />
     </div>
   );
 }
